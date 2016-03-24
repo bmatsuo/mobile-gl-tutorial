@@ -116,7 +116,7 @@ func onStop(glctx gl.Context) {
 }
 
 func onPaint(glctx gl.Context, sz size.Event) {
-	glctx.ClearColor(0, 0, 1, 1)
+	glctx.ClearColor(0, 0, 0.4, 1)
 	glctx.Clear(gl.COLOR_BUFFER_BIT)
 
 	glctx.UseProgram(program)

@@ -50,6 +50,7 @@ var (
 	mvpColMaj  [16]float32
 	mvpMat     *f32.Mat4
 	model      *f32.Mat4
+	viewAngle  float64
 	view       *f32.Mat4
 	viewEye    *f32.Vec3
 	viewCenter *f32.Vec3
@@ -137,7 +138,7 @@ func onStop(glctx gl.Context) {
 }
 
 func onPaint(glctx gl.Context, sz size.Event) {
-	glctx.ClearColor(0, 0, 1, 1)
+	glctx.ClearColor(0, 0, 0.4, 1)
 	glctx.Clear(gl.COLOR_BUFFER_BIT)
 
 	glctx.UseProgram(program)
