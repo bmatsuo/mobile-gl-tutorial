@@ -47,15 +47,23 @@ var (
 	position gl.Attrib
 	mvp      gl.Uniform
 
-	mvpColMaj  [16]float32
-	mvpMat     *f32.Mat4
-	model      *f32.Mat4
-	viewAngle  float64
-	view       *f32.Mat4
-	viewEye    *f32.Vec3
-	viewCenter *f32.Vec3
-	viewUp     *f32.Vec3
-	projection *f32.Mat4
+	mvpColMaj          [16]float32
+	mvpMat             *f32.Mat4
+	model              *f32.Mat4
+	modelCenter        *f32.Vec3  // this is used to center the model on its center of gravity prior to scaling
+	modelScale         *f32.Vec3  // scaling applied along each axis
+	modelRotationAxis  *f32.Vec3  // primary axis of model rotation -- in this application that is the y axis
+	modelRotationDelta f32.Radian // amount rotation changes each frame
+	modelRotationTotal f32.Radian // the current amount of rotation around the modelRotationAxis
+	modelRotationMax   f32.Radian = 3.1415 / 8
+	modelRotation      *f32.Mat4  // the model rotation axis, the result of rotating Total radian around Axis
+	modelPos           *f32.Vec3  // spacial position of the (rotated) model.
+	viewAngle          float32    // might be better for this to have higher resolution for reproduceability
+	view               *f32.Mat4
+	viewEye            *f32.Vec3
+	viewCenter         *f32.Vec3
+	viewUp             *f32.Vec3
+	projection         *f32.Mat4
 
 	green  float32
 	touchX float32
@@ -121,6 +129,12 @@ func onStart(glctx gl.Context) {
 	viewCenter = &f32.Vec3{0, 0, 0}
 	viewUp = &f32.Vec3{0, 1, 0}
 	model = new(f32.Mat4)
+	modelCenter = &f32.Vec3{0, 1.0 / 3.0, 0}
+	modelScale = &f32.Vec3{2, 0.5, 1}
+	modelPos = &f32.Vec3{2, 0, 0}
+	modelRotationAxis = &f32.Vec3{0, 1, 0}
+	modelRotationDelta = 0.025
+	modelRotation = new(f32.Mat4)
 	mvpMat = new(f32.Mat4)
 
 	position = glctx.GetAttribLocation(program, "vertexPosition")
@@ -143,52 +157,34 @@ func onPaint(glctx gl.Context, sz size.Event) {
 
 	glctx.UseProgram(program)
 
-	projection.Perspective(45, float32(float64(sz.WidthPx)/float64(sz.HeightPx)), 0.1, 100.0)
-	view.LookAt(viewEye, viewCenter, viewUp)
-	model.Identity()
-	mvpMat.Mul(model, view)
-	mvpMat.Mul(mvpMat, projection)
+	viewAngle += 0.05
+	*viewEye = f32.Vec3{5 * f32.Cos(viewAngle), -5 * f32.Sin(viewAngle), 3}
+	*viewUp = f32.Vec3{f32.Cos(viewAngle), -f32.Sin(viewAngle), 3}
 
-	// This looks like the correct matrix serialization. Though the documents
-	// claim that column major order is required I believe this is row major order.
-	mvpColMaj = [16]float32{
-		mvpMat[0][0],
-		mvpMat[0][1],
-		mvpMat[0][2],
-		mvpMat[0][3],
-		mvpMat[1][0],
-		mvpMat[1][1],
-		mvpMat[1][2],
-		mvpMat[1][3],
-		mvpMat[2][0],
-		mvpMat[2][1],
-		mvpMat[2][2],
-		mvpMat[2][3],
-		mvpMat[3][0],
-		mvpMat[3][1],
-		mvpMat[3][2],
-		mvpMat[3][3],
+	modelRotationTotal += modelRotationDelta
+	if modelRotationTotal >= modelRotationMax {
+		modelRotationTotal = modelRotationMax
+		modelRotationDelta *= -1
+	} else if -modelRotationTotal >= modelRotationMax {
+		modelRotationTotal = -modelRotationMax
+		modelRotationDelta *= -1
 	}
-	/*
-		mvpColMaj = [16]float32{
-			mvpMat[0][0],
-			mvpMat[1][0],
-			mvpMat[2][0],
-			mvpMat[3][0],
-			mvpMat[0][1],
-			mvpMat[1][1],
-			mvpMat[2][1],
-			mvpMat[3][1],
-			mvpMat[0][2],
-			mvpMat[1][2],
-			mvpMat[2][2],
-			mvpMat[3][2],
-			mvpMat[0][3],
-			mvpMat[1][3],
-			mvpMat[2][3],
-			mvpMat[3][3],
-		}
-	*/
+
+	modelRotation.Identity()
+	modelRotation.Rotate(modelRotation, modelRotationTotal, modelRotationAxis)
+
+	model.Identity()
+	model.Translate(model, modelPos[0], modelPos[1], modelPos[2])
+	model.Mul(model, modelRotation)
+	model.Scale(model, modelScale[0], modelScale[1], modelScale[2])
+	model.Translate(model, modelCenter[0], modelCenter[1], modelCenter[2])
+
+	setPerspective(projection, 45, float32(float64(sz.WidthPx)/float64(sz.HeightPx)), 0.1, 100.0)
+	lookAt(view, viewEye, viewCenter, viewUp)
+	mvpMat.Mul(projection, view)
+	mvpMat.Mul(mvpMat, model)
+	serialize4(mvpColMaj[:], mvpMat)
+
 	glctx.UniformMatrix4fv(mvp, mvpColMaj[:])
 
 	glctx.BindBuffer(gl.ARRAY_BUFFER, bufVertex)
