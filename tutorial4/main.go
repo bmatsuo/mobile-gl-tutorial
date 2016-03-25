@@ -23,7 +23,9 @@
 package main
 
 import (
+	colour "image/color"
 	"log"
+	"math"
 
 	"golang.org/x/mobile/app"
 	"golang.org/x/mobile/event/lifecycle"
@@ -139,9 +141,10 @@ func onStart(glctx gl.Context) {
 	// Initialize MVP values for the camera
 	projection = new(f32.Mat4)
 	view = new(f32.Mat4)
-	viewEye = &f32.Vec3{0, 5, 3}
+	sqrt5 := float32(math.Sqrt(5.0))
+	viewEye = &f32.Vec3{-sqrt5, -sqrt5, 3}
 	viewCenter = &f32.Vec3{0, 0, 0}
-	viewUp = &f32.Vec3{0, -1, 0}
+	viewUp = &f32.Vec3{0, 0, 1}
 	mvpMat = new(f32.Mat4)
 
 	modelTriangle = new(f32.Mat4)
@@ -174,25 +177,49 @@ func onStart(glctx gl.Context) {
 
 func onStop(glctx gl.Context) {
 	glctx.DeleteProgram(program)
+	glctx.DeleteBuffer(bufTriangleVertex)
+	glctx.DeleteBuffer(bufTriangleColor)
 	glctx.DeleteBuffer(bufD6Vertex)
-	glctx.DeleteBuffer(bufD6Color)
 	fps.Release()
 	images.Release()
 }
 
 func onPaint(glctx gl.Context, sz size.Event) {
-	glctx.ClearColor(0, 0, 0, 0.4)
+	glctx.ClearColor(0, 0, 0.4, 0.4)
+
+	// Re-enable DEPTH_TEST everytime because it must be disabled for rendering
+	// the FPS gauge.
+	glctx.Enable(gl.DEPTH_TEST)
 
 	// Clear the background and the depth buffer
 	glctx.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 	glctx.UseProgram(program)
 
+	for i := range d6VertexColors {
+		c := d6VertexColors[i].(colour.RGBA)
+		if c.R > 0 {
+			c.R += 2
+		}
+		if c.G > 0 {
+			c.G += 2
+		}
+		if c.B > 0 {
+			c.B += 2
+		}
+		d6VertexColors[i] = c
+	}
+	computeD6ColorData()
+
+	// Rebind the color buffer (for an unknown reason).
+	glctx.BindBuffer(gl.ARRAY_BUFFER, bufD6Color)
+	glctx.BufferData(gl.ARRAY_BUFFER, d6ColorData, gl.STATIC_DRAW)
+
 	// Compute the current perspective and camera position.
 	setPerspective(projection, 45, float32(float64(sz.WidthPx)/float64(sz.HeightPx)), 0.1, 100.0)
 	lookAt(view, viewEye, viewCenter, viewUp)
 
-	// dray the die
+	// draw the die
 
 	mvpMat.Mul(projection, view)
 	mvpMat.Mul(mvpMat, modelD6)
@@ -232,6 +259,8 @@ func onPaint(glctx gl.Context, sz size.Event) {
 	glctx.DisableVertexAttribArray(position)
 	glctx.DisableVertexAttribArray(color)
 
+	// Disable the depth test before drawing the FPS gauge.
+	glctx.Disable(gl.DEPTH_TEST)
 	fps.Draw(sz)
 }
 
