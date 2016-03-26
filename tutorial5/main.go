@@ -51,6 +51,9 @@ var (
 	mvp       gl.Uniform
 	textureID gl.Uniform
 
+	// BUG:
+	// The DDS compressed texture format is never used because I'm not sure how
+	// to generate it or which platforms support it properly.
 	texturePath string
 
 	bufD6Vertex gl.Buffer
