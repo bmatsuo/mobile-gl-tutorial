@@ -115,21 +115,10 @@ func onStart(glctx gl.Context) {
 		return
 	}
 
-	/*
-		textureD6, err = loadDDSPath(glctx, "uvtemplate.dds")
-		if err != nil {
-			log.Printf("error loading texture: %v", err)
-			return
-		}
-	*/
-	/*
-		textureD6, err = loadBMP(glctx, "uvtemplate.bmp")
-		if err != nil {
-			log.Printf("error loading texture: %v", err)
-			return
-		}
-	*/
-	textureD6, err = loadKTX(glctx, "uvtemplate.ktx")
+	// BUG:
+	// DDS format is never used because I'm not sure how to generate it or
+	// which platforms support it properly.
+	textureD6, err = loadTextureD6(glctx)
 	if err != nil {
 		log.Printf("error loading texture: %v", err)
 		return
