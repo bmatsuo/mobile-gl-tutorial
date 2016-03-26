@@ -27,6 +27,8 @@ import (
 	"log"
 	"math"
 
+	"github.com/bmatsuo/mobile-gl-tutorial/f32hack"
+
 	"golang.org/x/mobile/app"
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/paint"
@@ -216,14 +218,14 @@ func onPaint(glctx gl.Context, sz size.Event) {
 	glctx.BufferData(gl.ARRAY_BUFFER, d6ColorData, gl.STATIC_DRAW)
 
 	// Compute the current perspective and camera position.
-	setPerspective(projection, 45, float32(float64(sz.WidthPx)/float64(sz.HeightPx)), 0.1, 100.0)
-	lookAt(view, viewEye, viewCenter, viewUp)
+	f32hack.SetPerspective(projection, 45, float32(float64(sz.WidthPx)/float64(sz.HeightPx)), 0.1, 100.0)
+	f32hack.LookAt(view, viewEye, viewCenter, viewUp)
 
 	// draw the die
 
 	mvpMat.Mul(projection, view)
 	mvpMat.Mul(mvpMat, modelD6)
-	serialize4(mvpD6[:], mvpMat)
+	f32hack.Serialize4(mvpD6[:], mvpMat)
 	glctx.UniformMatrix4fv(mvp, mvpD6[:])
 
 	glctx.BindBuffer(gl.ARRAY_BUFFER, bufD6Vertex)
@@ -243,7 +245,7 @@ func onPaint(glctx gl.Context, sz size.Event) {
 
 	mvpMat.Mul(projection, view)
 	mvpMat.Mul(mvpMat, modelTriangle)
-	serialize4(mvpTriangle[:], mvpMat)
+	f32hack.Serialize4(mvpTriangle[:], mvpMat)
 	glctx.UniformMatrix4fv(mvp, mvpTriangle[:])
 
 	glctx.BindBuffer(gl.ARRAY_BUFFER, bufTriangleVertex)

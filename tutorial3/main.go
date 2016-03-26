@@ -26,6 +26,8 @@ import (
 	"encoding/binary"
 	"log"
 
+	"github.com/bmatsuo/mobile-gl-tutorial/f32hack"
+
 	"golang.org/x/mobile/app"
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/paint"
@@ -179,11 +181,11 @@ func onPaint(glctx gl.Context, sz size.Event) {
 	model.Scale(model, modelScale[0], modelScale[1], modelScale[2])
 	model.Translate(model, modelCenter[0], modelCenter[1], modelCenter[2])
 
-	setPerspective(projection, 45, float32(float64(sz.WidthPx)/float64(sz.HeightPx)), 0.1, 100.0)
-	lookAt(view, viewEye, viewCenter, viewUp)
+	f32hack.SetPerspective(projection, 45, float32(float64(sz.WidthPx)/float64(sz.HeightPx)), 0.1, 100.0)
+	f32hack.LookAt(view, viewEye, viewCenter, viewUp)
 	mvpMat.Mul(projection, view)
 	mvpMat.Mul(mvpMat, model)
-	serialize4(mvpColMaj[:], mvpMat)
+	f32hack.Serialize4(mvpColMaj[:], mvpMat)
 
 	glctx.UniformMatrix4fv(mvp, mvpColMaj[:])
 

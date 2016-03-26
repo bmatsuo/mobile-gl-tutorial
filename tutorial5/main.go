@@ -28,6 +28,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bmatsuo/mobile-gl-tutorial/f32hack"
 	"github.com/bmatsuo/mobile-gl-tutorial/mobtex"
 
 	"golang.org/x/mobile/app"
@@ -203,14 +204,14 @@ func onPaint(glctx gl.Context, sz size.Event) {
 	glctx.UseProgram(program)
 
 	// Compute the current perspective and camera position.
-	setPerspective(projection, 45, float32(float64(sz.WidthPx)/float64(sz.HeightPx)), 0.1, 100.0)
-	lookAt(view, viewEye, viewCenter, viewUp)
+	f32hack.SetPerspective(projection, 45, float32(float64(sz.WidthPx)/float64(sz.HeightPx)), 0.1, 100.0)
+	f32hack.LookAt(view, viewEye, viewCenter, viewUp)
 
 	// draw the die
 
 	mvpMat.Mul(projection, view)
 	mvpMat.Mul(mvpMat, modelD6)
-	serialize4(mvpD6[:], mvpMat)
+	f32hack.Serialize4(mvpD6[:], mvpMat)
 	glctx.UniformMatrix4fv(mvp, mvpD6[:])
 
 	// bind die vertex data

@@ -1,18 +1,23 @@
-package main
+package f32hack
 
 import "golang.org/x/mobile/exp/f32"
 
-func setPerspective(m *f32.Mat4, r f32.Radian, aspect, near, far float32) {
+// SetPerspective is like f32.Perspective(m, r, aspect, near, far) but the
+// resulting matrix is transposed to be in the proper form.
+func SetPerspective(m *f32.Mat4, r f32.Radian, aspect, near, far float32) {
 	m.Perspective(r, aspect, near, far)
-	transpose4(m)
+	Transpose4(m)
 }
 
-func lookAt(m *f32.Mat4, eye, center, up *f32.Vec3) {
+// LookAt is like f32.LookAt but the resulting matrix is transposed to be in
+// the proper form.
+func LookAt(m *f32.Mat4, eye, center, up *f32.Vec3) {
 	m.LookAt(eye, center, up)
-	transpose4(m)
+	Transpose4(m)
 }
 
-func transpose4(m *f32.Mat4) {
+// Transpose4 performs an in-place matrix transpose of m.
+func Transpose4(m *f32.Mat4) {
 	*m = f32.Mat4{
 		{m[0][0], m[1][0], m[2][0], m[3][0]},
 		{m[0][1], m[1][1], m[2][1], m[3][1]},
@@ -21,10 +26,10 @@ func transpose4(m *f32.Mat4) {
 	}
 }
 
-// serialize4 returns a slice containing m serialized into column-major order.
-// If len(dst) is at least 16 then the returned slice will slice of dst will be
-// used to serialize the data and reduce allocations.
-func serialize4(dst []float32, m *f32.Mat4) []float32 {
+// Serialize4 returns a slice containing m serialized into column-major order.
+// If len(dst) is at least 16 then the returned a slice of dst will be used to
+// serialize the data and returned.
+func Serialize4(dst []float32, m *f32.Mat4) []float32 {
 	// this serialization considers the matrix vectors to define its rows, the
 	// natural representation and how the package documents the type to behave.
 	if len(dst) < 16 {
