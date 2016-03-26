@@ -1,4 +1,4 @@
-//+build !linux !android
+//+build !linux,!android
 
 package main
 

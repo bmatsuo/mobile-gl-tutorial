@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/bmatsuo/mobile-gl-tutorial/tutorial5/texture/ktx"
+	"github.com/bmatsuo/mobile-gl-tutorial/texture/ktx"
 	"golang.org/x/mobile/asset"
 	"golang.org/x/mobile/gl"
 )
