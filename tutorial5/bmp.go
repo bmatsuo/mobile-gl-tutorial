@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
 
 	"golang.org/x/mobile/asset"
 	"golang.org/x/mobile/gl"
@@ -40,6 +41,8 @@ func loadBMP(glctx gl.Context, path string) (gl.Texture, error) {
 	width = binary.LittleEndian.Uint32(header[18:22])
 	height = binary.LittleEndian.Uint32(header[22:26])
 	size = binary.LittleEndian.Uint32(header[34:38])
+
+	log.Printf("BITMAP DATA w=%d h=%d size=%d", width, height, size)
 
 	if size == 0 {
 		size = width * height * 3

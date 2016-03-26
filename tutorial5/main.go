@@ -115,11 +115,25 @@ func onStart(glctx gl.Context) {
 		return
 	}
 
-	textureD6, err = loadBMP(glctx, "uvtemplate.bmp")
+	textureD6, err = loadDDSPath(glctx, "uvtemplate.dds")
 	if err != nil {
 		log.Printf("error loading texture: %v", err)
 		return
 	}
+	/*
+		textureD6, err = loadBMP(glctx, "uvtemplate.bmp")
+		if err != nil {
+			log.Printf("error loading texture: %v", err)
+			return
+		}
+	*/
+	/*
+		textureD6, err = loadKTX(glctx, "uvtemplate.ktx")
+		if err != nil {
+			log.Printf("error loading texture: %v", err)
+			return
+		}
+	*/
 
 	// Create a buffer for the die vertex positions
 	bufD6Vertex = glctx.CreateBuffer()
