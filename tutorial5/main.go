@@ -27,6 +27,8 @@ import (
 	"log"
 	"math"
 
+	"github.com/bmatsuo/mobile-gl-tutorial/mobtex"
+
 	"golang.org/x/mobile/app"
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/paint"
@@ -47,6 +49,8 @@ var (
 	uv        gl.Attrib
 	mvp       gl.Uniform
 	textureID gl.Uniform
+
+	texturePath string
 
 	bufD6Vertex gl.Buffer
 	bufD6UV     gl.Buffer
@@ -115,10 +119,7 @@ func onStart(glctx gl.Context) {
 		return
 	}
 
-	// BUG:
-	// DDS format is never used because I'm not sure how to generate it or
-	// which platforms support it properly.
-	textureD6, err = loadTextureD6(glctx)
+	textureD6, err = mobtex.LoadPath(glctx, texturePath)
 	if err != nil {
 		log.Printf("error loading texture: %v", err)
 		return

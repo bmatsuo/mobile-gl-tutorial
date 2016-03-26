@@ -1,4 +1,4 @@
-package main
+package mobtex
 
 import (
 	"fmt"
@@ -9,7 +9,9 @@ import (
 	"golang.org/x/mobile/gl"
 )
 
-func loadKTX(glctx gl.Context, path string) (gl.Texture, error) {
+// LoadKTX loads a KTX asset at path into the given gl.Context and returns the
+// gl.Texture identifier for the resulting texture.
+func LoadKTX(glctx gl.Context, path string) (gl.Texture, error) {
 	f, err := asset.Open(path)
 	if err != nil {
 		return gl.Texture{}, err

@@ -1,4 +1,4 @@
-package main
+package mobtex
 
 import (
 	"bufio"
@@ -11,7 +11,9 @@ import (
 	"golang.org/x/mobile/gl"
 )
 
-func loadBMP(glctx gl.Context, path string) (gl.Texture, error) {
+// LoadBMP loads a BMP asset at path into the given gl.Context and returns the
+// gl.Texture identifier for the resulting texture.
+func LoadBMP(glctx gl.Context, path string) (gl.Texture, error) {
 	var (
 		header  [54]byte
 		dataPos uint32

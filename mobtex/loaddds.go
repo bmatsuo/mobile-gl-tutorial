@@ -1,4 +1,4 @@
-package main
+package mobtex
 
 import (
 	"bufio"
@@ -14,18 +14,22 @@ import (
 
 var zt gl.Texture
 
-func loadDDSPath(glctx gl.Context, path string) (gl.Texture, error) {
+// LoadDDSPath loads a DDS asset at path into the given gl.Context and returns
+// the gl.Texture identifier for the resulting texture.
+func LoadDDSPath(glctx gl.Context, path string) (gl.Texture, error) {
 	f, err := asset.Open(path)
 	if err != nil {
 		return zt, err
 	}
 	defer f.Close()
-	return loadDDS(glctx, f)
+	return LoadDDS(glctx, f)
 }
 
 var ddsFileCode = []byte("DDS ")
 
-func loadDDS(glctx gl.Context, r io.Reader) (gl.Texture, error) {
+// LoadDDS loads a DDS formatted byte stream from r into the given gl.Context
+// and returns the gl.Texture identifier for the resulting texture.
+func LoadDDS(glctx gl.Context, r io.Reader) (gl.Texture, error) {
 	r = bufio.NewReader(r)
 
 	var (
