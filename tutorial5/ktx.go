@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/bmatsuo/mobile-gl-tutorial/tutorial5/texture/ktx"
@@ -41,7 +42,6 @@ func loadKTX(glctx gl.Context, path string) (gl.Texture, error) {
 
 	texture := glctx.CreateTexture()
 	glctx.BindTexture(gl.TEXTURE_2D, texture)
-	glctx.TexParameteri(gl.TEXTURE_2D, 0x8192 /*gl.GENERATE_MIPMAP*/, gl.TRUE)
 
 	width := int(header.PixelWidth)
 	height := int(header.PixelHeight)
@@ -51,11 +51,18 @@ func loadKTX(glctx gl.Context, path string) (gl.Texture, error) {
 		glctx.CompressedTexImage2D(gl.TEXTURE_2D, level, gl.Enum(header.GLInternalFormat), width, height, 0, mipdata)
 		glerr := glctx.GetError()
 		if glerr == gl.INVALID_ENUM {
-			formats := make([]int32, 10)
+			formats := make([]int32, 32)
 			glctx.GetIntegerv(formats, gl.COMPRESSED_TEXTURE_FORMATS)
-			log.Printf("invalid compression format: %x %x", header.GLInternalFormat, formats)
+			for i := range formats {
+				if formats[i] == 0 {
+					formats = formats[:i]
+					break
+				}
+			}
+			log.Printf("AVAILABLE COMPRESSED TEXTURE FORMATS: %x", formats)
+			return gl.Texture{}, fmt.Errorf("invalid compressed texture format: %x", header.GLInternalFormat)
 		} else if glerr != 0 {
-			log.Printf("GL ERROR: %x", glerr)
+			return gl.Texture{}, fmt.Errorf("GL ERROR: %x", glerr)
 		}
 		width /= 2
 		height /= 2
