@@ -3,5 +3,5 @@
 package main
 
 func init() {
-	texturePath = "uvtemplate.ktx"
+	texturePath = "uvtemplate.bmp"
 }

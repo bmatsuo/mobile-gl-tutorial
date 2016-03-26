@@ -23,9 +23,10 @@
 package main
 
 import (
-	"encoding/binary"
 	"log"
 	"math"
+	"path/filepath"
+	"strings"
 
 	"github.com/bmatsuo/mobile-gl-tutorial/mobtex"
 
@@ -69,6 +70,12 @@ var (
 	touchX float32
 	touchY float32
 )
+
+// invertUV determines if the hardcoded vertex UV matrix needs to have its y
+// values inverted.
+func invertUV() bool {
+	return strings.ToLower(filepath.Ext(texturePath)) == ".bmp"
+}
 
 func main() {
 	app.Main(func(a app.App) {
@@ -123,6 +130,12 @@ func onStart(glctx gl.Context) {
 	if err != nil {
 		log.Printf("error loading texture: %v", err)
 		return
+	}
+	if invertUV() {
+		for i := 1; i < len(d6UV); i += 2 {
+			d6UV[i] = 1 - d6UV[i]
+		}
+		computeD6UVData()
 	}
 
 	// Create a buffer for the die vertex positions
@@ -221,45 +234,6 @@ func onPaint(glctx gl.Context, sz size.Event) {
 	glctx.Disable(gl.DEPTH_TEST)
 	fps.Draw(sz)
 }
-
-var d6UVData = f32.Bytes(binary.LittleEndian,
-	0.000059, 0.000004,
-	0.000103, 0.336048,
-	0.335973, 0.335903,
-	1.000023, 0.000013,
-	0.667979, 0.335851,
-	0.999958, 0.336064,
-	0.667979, 0.335851,
-	0.336024, 0.671877,
-	0.667969, 0.671889,
-	1.000023, 0.000013,
-	0.668104, 0.000013,
-	0.667979, 0.335851,
-	0.000059, 0.000004,
-	0.335973, 0.335903,
-	0.336098, 0.000071,
-	0.667979, 0.335851,
-	0.335973, 0.335903,
-	0.336024, 0.671877,
-	1.000004, 0.671847,
-	0.999958, 0.336064,
-	0.667979, 0.335851,
-	0.668104, 0.000013,
-	0.335973, 0.335903,
-	0.667979, 0.335851,
-	0.335973, 0.335903,
-	0.668104, 0.000013,
-	0.336098, 0.000071,
-	0.000103, 0.336048,
-	0.000004, 0.671870,
-	0.336024, 0.671877,
-	0.000103, 0.336048,
-	0.336024, 0.671877,
-	0.335973, 0.335903,
-	0.667969, 0.671889,
-	1.000004, 0.671847,
-	0.667979, 0.335851,
-)
 
 const vertexShader = `#version 100
 

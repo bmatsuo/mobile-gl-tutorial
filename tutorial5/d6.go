@@ -2,13 +2,12 @@ package main
 
 import (
 	"encoding/binary"
-	colour "image/color"
 
 	"golang.org/x/mobile/exp/f32"
 )
 
 func init() {
-	computeD6ColorData()
+	computeD6UVData()
 }
 
 const (
@@ -55,59 +54,47 @@ var d6VertexData = f32.Bytes(binary.LittleEndian,
 	1.0, -1.0, 1.0,
 )
 
-var d6VertexColors = [d6VertexCount]colour.Color{
-	colour.RGBA{R: 255, G: 0, B: 0},
-	colour.RGBA{R: 255, G: 0, B: 0},
-	colour.RGBA{R: 255, G: 0, B: 0},
-	colour.RGBA{R: 255, G: 0, B: 0},
-	colour.RGBA{R: 255, G: 0, B: 0},
-	colour.RGBA{R: 255, G: 0, B: 0},
-	colour.RGBA{R: 0, G: 255, B: 0},
-	colour.RGBA{R: 0, G: 255, B: 0},
-	colour.RGBA{R: 0, G: 255, B: 0},
-	colour.RGBA{R: 0, G: 255, B: 0},
-	colour.RGBA{R: 0, G: 255, B: 0},
-	colour.RGBA{R: 0, G: 255, B: 0},
-	colour.RGBA{R: 0, G: 0, B: 255},
-	colour.RGBA{R: 0, G: 0, B: 255},
-	colour.RGBA{R: 0, G: 0, B: 255},
-	colour.RGBA{R: 0, G: 0, B: 255},
-	colour.RGBA{R: 0, G: 0, B: 255},
-	colour.RGBA{R: 0, G: 0, B: 255},
-	colour.RGBA{R: 127, G: 0, B: 0},
-	colour.RGBA{R: 127, G: 0, B: 0},
-	colour.RGBA{R: 127, G: 0, B: 0},
-	colour.RGBA{R: 127, G: 0, B: 0},
-	colour.RGBA{R: 127, G: 0, B: 0},
-	colour.RGBA{R: 127, G: 0, B: 0},
-	colour.RGBA{R: 0, G: 127, B: 0},
-	colour.RGBA{R: 0, G: 127, B: 0},
-	colour.RGBA{R: 0, G: 127, B: 0},
-	colour.RGBA{R: 0, G: 127, B: 0},
-	colour.RGBA{R: 0, G: 127, B: 0},
-	colour.RGBA{R: 0, G: 127, B: 0},
-	colour.RGBA{R: 0, G: 0, B: 127},
-	colour.RGBA{R: 0, G: 0, B: 127},
-	colour.RGBA{R: 0, G: 0, B: 127},
-	colour.RGBA{R: 0, G: 0, B: 127},
-	colour.RGBA{R: 0, G: 0, B: 127},
-	colour.RGBA{R: 0, G: 0, B: 127},
+var d6UV = [2 * d6VertexCount]float32{
+	0.000059, 0.000004,
+	0.000103, 0.336048,
+	0.335973, 0.335903,
+	1.000023, 0.000013,
+	0.667979, 0.335851,
+	0.999958, 0.336064,
+	0.667979, 0.335851,
+	0.336024, 0.671877,
+	0.667969, 0.671889,
+	1.000023, 0.000013,
+	0.668104, 0.000013,
+	0.667979, 0.335851,
+	0.000059, 0.000004,
+	0.335973, 0.335903,
+	0.336098, 0.000071,
+	0.667979, 0.335851,
+	0.335973, 0.335903,
+	0.336024, 0.671877,
+	1.000004, 0.671847,
+	0.999958, 0.336064,
+	0.667979, 0.335851,
+	0.668104, 0.000013,
+	0.335973, 0.335903,
+	0.667979, 0.335851,
+	0.335973, 0.335903,
+	0.668104, 0.000013,
+	0.336098, 0.000071,
+	0.000103, 0.336048,
+	0.000004, 0.671870,
+	0.336024, 0.671877,
+	0.000103, 0.336048,
+	0.336024, 0.671877,
+	0.335973, 0.335903,
+	0.667969, 0.671889,
+	1.000004, 0.671847,
+	0.667979, 0.335851,
 }
 
-var d6VertexColorP [coordsPerVertex * d6VertexCount]float32
+var d6UVData []byte
 
-var d6ColorData = f32.Bytes(binary.LittleEndian, d6VertexColorP[:]...)
-
-func computeD6ColorP() {
-	for i := range d6VertexColors {
-		r, g, b, _ := d6VertexColors[i].RGBA()
-		d6VertexColorP[coordsPerVertex*i+0] = float32(r) / float32(uint16(0xffff))
-		d6VertexColorP[coordsPerVertex*i+1] = float32(g) / float32(uint16(0xffff))
-		d6VertexColorP[coordsPerVertex*i+2] = float32(b) / float32(uint16(0xffff))
-	}
-}
-
-func computeD6ColorData() {
-	computeD6ColorP()
-	copy(d6ColorData, f32.Bytes(binary.LittleEndian, d6VertexColorP[:]...))
+func computeD6UVData() {
+	d6UVData = f32.Bytes(binary.LittleEndian, d6UV[:]...)
 }
