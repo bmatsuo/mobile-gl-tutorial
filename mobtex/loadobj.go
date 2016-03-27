@@ -14,13 +14,38 @@ import (
 
 // VBO is an indexed Obj
 type VBO struct {
-	Index []int
+	Index []uint16
 	Obj
 }
 
 // IndexVBO builds an index over the given vertices.
 func IndexVBO(in *Obj) *VBO {
-	return nil
+	vbo := &VBO{}
+	indexMap := map[packedVertex]int{}
+
+	for i := range in.V {
+		packed := packedVertex{
+			V:  in.V[i],
+			VT: in.VT[i],
+			VN: in.VN[i],
+		}
+		index, ok := indexMap[packed]
+		if !ok {
+			index = len(vbo.V)
+			vbo.V = append(vbo.V, in.V[i])
+			vbo.VT = append(vbo.VT, in.VT[i])
+			vbo.VN = append(vbo.VN, in.VN[i])
+			indexMap[packed] = index
+		}
+		vbo.Index = append(vbo.Index, uint16(index))
+	}
+	return vbo
+}
+
+type packedVertex struct {
+	V  f32.Vec3
+	VT Vec2
+	VN f32.Vec3
 }
 
 // Obj contains the contents of an OBJ file.
