@@ -63,6 +63,8 @@ var (
 	modelD6     *f32.Mat4
 	mvpD6       [16]float32
 
+	decel f32.Radian // decelleration in radians/sec
+
 	viewAngle         f32.Radian
 	viewAngleSpeed    f32.Radian
 	viewAngleMaxSpeed f32.Radian
@@ -123,7 +125,19 @@ func computePV(sz size.Event, deltat float32, force bool) {
 	*viewUp = f32.Vec3{f32.Cos(float32(viewAngle)), -f32.Sin(float32(viewAngle)), 3}
 	f32hack.LookAt(view, viewEye, viewCenter, viewUp)
 
-	log.Printf("ANGLE=%.02f SPEED=%.02f/s", viewAngle, viewAngleSpeed)
+	//log.Printf("ANGLE=%.02f SPEED=%.02f/s", viewAngle, viewAngleSpeed)
+	newViewAngleSpeed := viewAngleSpeed
+	if viewAngleSpeed > 0 {
+		newViewAngleSpeed = viewAngleSpeed - decel*f32.Radian(deltat)
+	} else if viewAngleSpeed < 0 {
+		newViewAngleSpeed = viewAngleSpeed + decel*f32.Radian(deltat)
+	}
+	if viewAngleSpeed*newViewAngleSpeed < 0 {
+		newViewAngleSpeed = 0
+	}
+	//log.Printf("NEW=%.02f/s OLD=%.02f/s", newViewAngleSpeed, viewAngleSpeed)
+	viewAngleSpeed = newViewAngleSpeed
+	vX = float32(viewAngleSpeed / angleScale)
 
 	// no transformation applied to fovSpeed because honestly I don't know what
 	// you would do
@@ -136,7 +150,19 @@ func computePV(sz size.Event, deltat float32, force bool) {
 	fov += fovSpeed * f32.Radian(deltat)
 
 	f32hack.SetPerspective(projection, fov, aspect, 0.1, 100.0)
-	log.Printf("FOV=%.02f SPEED=%.02f/s", fov, fovSpeed)
+	//log.Printf("FOV=%.02f SPEED=%.02f/s", fov, fovSpeed)
+	newFovSpeed := fovSpeed
+	if fovSpeed > 0 {
+		newFovSpeed = fovSpeed - decel*f32.Radian(deltat)
+	} else if fovSpeed < 0 {
+		newFovSpeed = fovSpeed + decel*f32.Radian(deltat)
+	}
+	if fovSpeed*newFovSpeed < 0 {
+		newFovSpeed = 0
+	}
+	//log.Printf("NEW=%.02f/s OLD=%.02f/s", newFovSpeed, fovSpeed)
+	fovSpeed = newFovSpeed
+	vY = float32(fovSpeed) // TODO: undo whatever transformation I decide is right
 }
 
 // invertUV determines if the hardcoded vertex UV matrix needs to have its y
@@ -218,6 +244,9 @@ func onStart(glctx gl.Context) {
 	// deal.
 	touchTime = time.Now()
 	drawTime = time.Now()
+
+	// Decellerate at 2*PI RAD/S^2 becasue that seems about right..
+	decel = 2 * PI
 
 	// allow two rotations around the model per second
 	viewAngleMaxSpeed = 2 * PI
