@@ -143,7 +143,7 @@ func computePV(sz size.Event, deltat float32, force bool) {
 // invertUV determines if the hardcoded vertex UV matrix needs to have its y
 // values inverted.
 func invertUV() bool {
-	return strings.ToLower(filepath.Ext(texturePath)) == ".bmp"
+	return strings.ToLower(filepath.Ext(texturePath)) == ".ktx"
 }
 
 func main() {
@@ -235,31 +235,27 @@ func onStart(glctx gl.Context) {
 		return
 	}
 
-	textureD6, err = mobtex.LoadPath(glctx, "uvmap.dds")
+	textureD6, err = mobtex.LoadPath(glctx, texturePath)
 	if err != nil {
 		log.Printf("error loading texture: %v", err)
 		return
 	}
-	if invertUV() {
-		for i := 1; i < len(d6UV); i += 2 {
-			d6UV[i] = 1 - d6UV[i]
-		}
-		computeD6UVData()
-	}
 
-	vs, uvs, _, err := mobtex.DecodeObjPath("cube.obj")
+	vs, uvs, _, err := mobtex.DecodeObjPath("cube2.obj")
 	if err != nil {
 		log.Printf("error loading object: %v", err)
 		return
 	}
 	d6VertexData = d6VertexData[:0]
 	d6UVData = d6UVData[:0]
+	uvinvert := invertUV()
 	for i := range vs {
-		log.Printf("VERTEX %v", vs[i])
 		d6VertexData = append(d6VertexData, f32.Bytes(binary.LittleEndian, vs[i][:]...)...)
 	}
 	for i := range uvs {
-		log.Printf("UV %v", uvs[i])
+		if uvinvert {
+			uvs[i][1] = 1 - uvs[i][1]
+		}
 		d6UVData = append(d6UVData, f32.Bytes(binary.LittleEndian, uvs[i][:]...)...)
 	}
 

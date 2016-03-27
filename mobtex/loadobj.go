@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"strconv"
 	"unsafe"
 
@@ -99,13 +98,13 @@ func DecodeObj(r io.Reader) (vs []f32.Vec3, uvs []Vec2, norms []f32.Vec3, err er
 			normTemp = append(normTemp, vn)
 		case bytes.Equal(head, []byte("f")):
 			if len(vector) != 3 {
-				return nil, nil, nil, fmt.Errorf("invalid face")
+				return nil, nil, nil, fmt.Errorf("invalid face %q", vector)
 			}
 			vx1, uv1, norm1, err := parseIndices(vector[0])
 			if err != nil {
 				return nil, nil, nil, fmt.Errorf("invalid face: %v", err)
 			}
-			vx2, uv2, norm2, err := parseIndices(vector[2])
+			vx2, uv2, norm2, err := parseIndices(vector[1])
 			if err != nil {
 				return nil, nil, nil, fmt.Errorf("invalid face: %v", err)
 			}
@@ -115,8 +114,8 @@ func DecodeObj(r io.Reader) (vs []f32.Vec3, uvs []Vec2, norms []f32.Vec3, err er
 			}
 
 			vxIndices = append(vxIndices, vx1, vx2, vx3)
-			uvIndices = append(vxIndices, uv1, uv2, uv3)
-			normIndices = append(vxIndices, norm1, norm2, norm3)
+			uvIndices = append(uvIndices, uv1, uv2, uv3)
+			normIndices = append(normIndices, norm1, norm2, norm3)
 		case bytes.Equal(head, []byte("s")):
 			// ?
 			continue
@@ -127,7 +126,6 @@ func DecodeObj(r io.Reader) (vs []f32.Vec3, uvs []Vec2, norms []f32.Vec3, err er
 	}
 
 	for i := range vxIndices {
-		log.Printf("i=%d j=%d numtmp=%d", i, vxIndices[i], len(vxTemp))
 		vs = append(vs, vxTemp[vxIndices[i]-1])
 	}
 	for i := range uvIndices {
