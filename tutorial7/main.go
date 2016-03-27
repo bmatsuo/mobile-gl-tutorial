@@ -315,8 +315,9 @@ func onPaint(glctx gl.Context, sz size.Event) {
 
 	glctx.ClearColor(0, 0, 0.4, 0.4)
 
-	// Re-enable DEPTH_TEST everytime because it must be disabled for rendering
-	// the FPS gauge.
+	// Re-enable flags which must be reset everytime because they must be
+	// disabled for rendering the FPS gauge.
+	glctx.Enable(gl.CULL_FACE)
 	glctx.Enable(gl.DEPTH_TEST)
 
 	// Clear the background and the depth buffer
@@ -354,7 +355,9 @@ func onPaint(glctx gl.Context, sz size.Event) {
 	glctx.DisableVertexAttribArray(position)
 	glctx.DisableVertexAttribArray(uv)
 
-	// Disable the depth test before drawing the FPS gauge.
+	// Disable certain flags before drawing the FPS gauge because they will
+	// cause the gauge to be invisible.
+	glctx.Disable(gl.CULL_FACE)
 	glctx.Disable(gl.DEPTH_TEST)
 	fps.Draw(sz)
 }
