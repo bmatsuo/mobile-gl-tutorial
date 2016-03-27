@@ -1,5 +1,6 @@
 package main
 
 func init() {
-	texturePath = "uvtemplate.ktx"
+	objectPath = "suzanne.obj"
+	texturePath = "uvmap.ktx"
 }

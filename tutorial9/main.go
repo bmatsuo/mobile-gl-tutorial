@@ -66,6 +66,7 @@ var (
 	// The DDS compressed texture format is never used because I'm not sure how
 	// to generate it or which platforms support it properly.
 	texturePath string
+	objectPath  string
 
 	bufD6Vertex gl.Buffer
 	bufD6UV     gl.Buffer
@@ -311,7 +312,7 @@ func onStart(glctx gl.Context) {
 		return
 	}
 
-	obj, err := mobtex.DecodeObjPath("cube2.obj")
+	obj, err := mobtex.DecodeObjPath(objectPath)
 	if err != nil {
 		log.Printf("error loading object: %v", err)
 		return
