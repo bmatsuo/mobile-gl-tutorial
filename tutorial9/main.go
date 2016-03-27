@@ -39,14 +39,15 @@ import (
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
 	"golang.org/x/mobile/event/touch"
+	"golang.org/x/mobile/exp/app/debug"
 	"golang.org/x/mobile/exp/f32"
 	"golang.org/x/mobile/exp/gl/glutil"
 	"golang.org/x/mobile/gl"
 )
 
 var (
-	//images  *glutil.Images
-	//fps     *debug.FPS
+	images  *glutil.Images
+	fps     *debug.FPS
 	program gl.Program
 
 	glPosition   gl.Attrib
@@ -389,16 +390,16 @@ func onStart(glctx gl.Context) {
 	glctx.Enable(gl.DEPTH_TEST)
 	glctx.DepthFunc(gl.LESS)
 
-	//images = glutil.NewImages(glctx)
-	//fps = debug.NewFPS(images)
+	images = glutil.NewImages(glctx)
+	fps = debug.NewFPS(images)
 }
 
 func onStop(glctx gl.Context) {
 	glctx.DeleteProgram(program)
 	glctx.DeleteBuffer(bufD6Vertex)
 	glctx.DeleteBuffer(bufD6UV)
-	//fps.Release()
-	//images.Release()
+	fps.Release()
+	images.Release()
 }
 
 func onPaint(glctx gl.Context, sz size.Event) {
@@ -421,8 +422,8 @@ func onPaint(glctx gl.Context, sz size.Event) {
 
 	// Re-enable flags which must be reset everytime because they must be
 	// disabled for rendering the FPS gauge.
-	//glctx.Enable(gl.CULL_FACE)
-	//glctx.Enable(gl.DEPTH_TEST)
+	glctx.Enable(gl.CULL_FACE)
+	glctx.Enable(gl.DEPTH_TEST)
 
 	// Clear the background and the depth buffer
 	glctx.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -467,14 +468,13 @@ func onPaint(glctx gl.Context, sz size.Event) {
 
 	// bind die vector index data
 	glctx.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufD6Index)
-	glctx.DrawElements(gl.TRIANGLES, len(d6IndexData)/2, gl.UNSIGNED_SHORT, 0)
 
 	// bind the die texture
 	glctx.ActiveTexture(gl.TEXTURE0)
 	glctx.BindTexture(gl.TEXTURE_2D, textureD6)
 	glctx.Uniform1i(glTexture, 0)
 
-	glctx.DrawArrays(gl.TRIANGLES, 0, d6VertexCount)
+	glctx.DrawElements(gl.TRIANGLES, len(d6IndexData)/2, gl.UNSIGNED_SHORT, 0)
 
 	glctx.DisableVertexAttribArray(glPosition)
 	glctx.DisableVertexAttribArray(glUV)
@@ -482,9 +482,9 @@ func onPaint(glctx gl.Context, sz size.Event) {
 
 	// Disable certain flags before drawing the FPS gauge because they will
 	// cause the gauge to be invisible.
-	//glctx.Disable(gl.CULL_FACE)
-	//glctx.Disable(gl.DEPTH_TEST)
-	//fps.Draw(sz)
+	glctx.Disable(gl.CULL_FACE)
+	glctx.Disable(gl.DEPTH_TEST)
+	fps.Draw(sz)
 }
 
 const vertexShader = `#version 100
