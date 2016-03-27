@@ -12,24 +12,39 @@ import (
 	"golang.org/x/mobile/exp/f32"
 )
 
-// Vec2 is a 2-dimensional vector with 32 bit precision
-type Vec2 [2]float32
+// VBO is an indexed Obj
+type VBO struct {
+	Index []int
+	Obj
+}
+
+// IndexVBO builds an index over the given vertices.
+func IndexVBO(in *Obj) *VBO {
+	return nil
+}
+
+// Obj contains the contents of an OBJ file.
+type Obj struct {
+	V  []f32.Vec3
+	VT []Vec2
+	VN []f32.Vec3
+}
 
 // DecodeObjPath loads an object asset at path using the DecodeObj function as
 // a helper.
-func DecodeObjPath(path string) (vs []f32.Vec3, uvs []Vec2, norms []f32.Vec3, err error) {
+func DecodeObjPath(path string) (*Obj, error) {
 	f, err := asset.Open(path)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 	defer f.Close()
 	return DecodeObj(f)
 }
 
 // DecodeObj loads an object (OBJ) byte stream from r.
-func DecodeObj(r io.Reader) (vs []f32.Vec3, uvs []Vec2, norms []f32.Vec3, err error) {
+func DecodeObj(r io.Reader) (*Obj, error) {
+	var err error
 	var vxIndices, uvIndices, normIndices []int
-
 	var vxTemp []f32.Vec3
 	var uvTemp []Vec2
 	var normTemp []f32.Vec3
@@ -38,7 +53,7 @@ func DecodeObj(r io.Reader) (vs []f32.Vec3, uvs []Vec2, norms []f32.Vec3, err er
 	for s.Scan() {
 		line := s.Bytes()
 		if len(line) == 0 {
-			return nil, nil, nil, fmt.Errorf("blank line")
+			return nil, fmt.Errorf("blank line")
 		}
 		if line[0] == '#' {
 			continue
@@ -48,69 +63,69 @@ func DecodeObj(r io.Reader) (vs []f32.Vec3, uvs []Vec2, norms []f32.Vec3, err er
 		switch {
 		case bytes.Equal(head, []byte("v")):
 			if len(vector) != 3 {
-				return nil, nil, nil, fmt.Errorf("invalid vertex")
+				return nil, fmt.Errorf("invalid vertex")
 			}
 			var v f32.Vec3
 			v[0], err = parseFloat32(vector[0])
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("invalid vertex: %v", err)
+				return nil, fmt.Errorf("invalid vertex: %v", err)
 			}
 			v[1], err = parseFloat32(vector[1])
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("invalid vertex: %v", err)
+				return nil, fmt.Errorf("invalid vertex: %v", err)
 			}
 			v[2], err = parseFloat32(vector[2])
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("invalid vertex: %v", err)
+				return nil, fmt.Errorf("invalid vertex: %v", err)
 			}
 			vxTemp = append(vxTemp, v)
 		case bytes.Equal(head, []byte("vt")):
 			if len(vector) != 2 {
-				return nil, nil, nil, fmt.Errorf("invalid texture coords")
+				return nil, fmt.Errorf("invalid texture coords")
 			}
 			var vt Vec2
 			vt[0], err = parseFloat32(vector[0])
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("invalid texture coords: %v", err)
+				return nil, fmt.Errorf("invalid texture coords: %v", err)
 			}
 			vt[1], err = parseFloat32(vector[1])
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("invalid texture coords: %v", err)
+				return nil, fmt.Errorf("invalid texture coords: %v", err)
 			}
 			uvTemp = append(uvTemp, vt)
 		case bytes.Equal(head, []byte("vn")):
 			if len(vector) != 3 {
-				return nil, nil, nil, fmt.Errorf("invalid normal")
+				return nil, fmt.Errorf("invalid normal")
 			}
 			var vn f32.Vec3
 			vn[0], err = parseFloat32(vector[0])
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("invalid normal: %v", err)
+				return nil, fmt.Errorf("invalid normal: %v", err)
 			}
 			vn[1], err = parseFloat32(vector[1])
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("invalid normal: %v", err)
+				return nil, fmt.Errorf("invalid normal: %v", err)
 			}
 			vn[2], err = parseFloat32(vector[2])
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("invalid normal: %v", err)
+				return nil, fmt.Errorf("invalid normal: %v", err)
 			}
 			normTemp = append(normTemp, vn)
 		case bytes.Equal(head, []byte("f")):
 			if len(vector) != 3 {
-				return nil, nil, nil, fmt.Errorf("invalid face %q", vector)
+				return nil, fmt.Errorf("invalid face %q", vector)
 			}
 			vx1, uv1, norm1, err := parseIndices(vector[0])
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("invalid face: %v", err)
+				return nil, fmt.Errorf("invalid face: %v", err)
 			}
 			vx2, uv2, norm2, err := parseIndices(vector[1])
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("invalid face: %v", err)
+				return nil, fmt.Errorf("invalid face: %v", err)
 			}
 			vx3, uv3, norm3, err := parseIndices(vector[2])
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("invalid face: %v", err)
+				return nil, fmt.Errorf("invalid face: %v", err)
 			}
 
 			vxIndices = append(vxIndices, vx1, vx2, vx3)
@@ -122,20 +137,21 @@ func DecodeObj(r io.Reader) (vs []f32.Vec3, uvs []Vec2, norms []f32.Vec3, err er
 		}
 	}
 	if s.Err() != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
+	obj := &Obj{}
 	for i := range vxIndices {
-		vs = append(vs, vxTemp[vxIndices[i]-1])
+		obj.V = append(obj.V, vxTemp[vxIndices[i]-1])
 	}
 	for i := range uvIndices {
-		uvs = append(uvs, uvTemp[uvIndices[i]-1])
+		obj.VT = append(obj.VT, uvTemp[uvIndices[i]-1])
 	}
 	for i := range normIndices {
-		norms = append(norms, normTemp[normIndices[i]-1])
+		obj.VN = append(obj.VN, normTemp[normIndices[i]-1])
 	}
 
-	return vs, uvs, norms, err
+	return obj, err
 }
 
 func parseIndices(b []byte) (int, int, int, error) {
@@ -159,3 +175,6 @@ func parseFloat32(b []byte) (float32, error) {
 	f64, err := strconv.ParseFloat(*(*string)(unsafe.Pointer(&b)), 32)
 	return float32(f64), err
 }
+
+// Vec2 is a 2-dimensional vector with 32 bit precision
+type Vec2 [2]float32

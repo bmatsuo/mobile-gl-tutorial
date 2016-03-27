@@ -270,7 +270,7 @@ func onStart(glctx gl.Context) {
 		return
 	}
 
-	vs, uvs, _, err := mobtex.DecodeObjPath("cube2.obj")
+	obj, err := mobtex.DecodeObjPath("cube2.obj")
 	if err != nil {
 		log.Printf("error loading object: %v", err)
 		return
@@ -278,14 +278,14 @@ func onStart(glctx gl.Context) {
 	d6VertexData = d6VertexData[:0]
 	d6UVData = d6UVData[:0]
 	uvinvert := invertUV()
-	for i := range vs {
-		d6VertexData = append(d6VertexData, f32.Bytes(binary.LittleEndian, vs[i][:]...)...)
+	for i := range obj.V {
+		d6VertexData = append(d6VertexData, f32.Bytes(binary.LittleEndian, obj.V[i][:]...)...)
 	}
-	for i := range uvs {
+	for i := range obj.VT {
 		if uvinvert {
-			uvs[i][1] = 1 - uvs[i][1]
+			obj.VT[i][1] = 1 - obj.VT[i][1]
 		}
-		d6UVData = append(d6UVData, f32.Bytes(binary.LittleEndian, uvs[i][:]...)...)
+		d6UVData = append(d6UVData, f32.Bytes(binary.LittleEndian, obj.VT[i][:]...)...)
 	}
 
 	// Create a buffer for the die vertex positions
