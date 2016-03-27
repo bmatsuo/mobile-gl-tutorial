@@ -1,10 +1,5 @@
 package mobtex
 
-/*
-#include <OpenGL/glext.h>
-*/
-import "C"
-
 import (
 	"bufio"
 	"bytes"
@@ -89,13 +84,13 @@ func LoadDDS(glctx gl.Context, r io.Reader) (gl.Texture, error) {
 	blockSize := uint32(16)
 	switch fourCC {
 	case "DXT1":
-		format = C.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+		format = 0x83F1
 		//numComponent = 3
 		blockSize = 8
 	case "DXT3":
-		format = C.GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+		format = 0x83F2
 	case "DXT5":
-		format = C.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+		format = 0x83F3
 	default:
 		return zt, fmt.Errorf("invalid dxt identifier")
 	}
