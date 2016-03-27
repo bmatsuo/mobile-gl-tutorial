@@ -447,7 +447,7 @@ void main() {
 	vec3 lightPositionCamera = (V * vec4(lightPosition, 1)).xyz;
 	lightDirectionCamera = lightPositionCamera + eyeDirectionCamera;
 
-	normalCamera = vertexNormal; //(V * M * vec4(vertexNormal, 0)).xyz; // Only correct if ModelMatrix does not scale the model ! Use its inverse transpose scaling occurs.
+	normalCamera = (V * M * vec4(vertexNormal, 0)).xyz; // Only correct if ModelMatrix does not scale the model ! Use its inverse transpose scaling occurs.
 
 	// this is as it has always been
 	UV = vertexUV;
@@ -482,7 +482,7 @@ void main() {
 	//  - light is at the vertical of the triangle -> 1
 	//  - light is perpendicular to the triangle -> 0
 	//  - light is behind the triangle -> 0
-	float cosTheta = clamp(length(normalCamera), 0, 1);
+	float cosTheta = clamp(dot(n, l), 0, 1);
 
 	vec3 E = normalize(eyeDirectionCamera);
 	vec3 R = reflect(-l, n);
@@ -493,7 +493,7 @@ void main() {
 	float cosAlpha = clamp(dot(E, R ), 0, 1);
 
 	gl_FragColor = vec4(
-			//materialAmbientColor + 
+			materialAmbientColor +
 				materialDiffuseColor * lightColor * lightPower * cosTheta / (lightDistance * lightDistance) + 
 				materialSpecularColor * lightColor * lightPower * pow(cosAlpha, 5) / (lightDistance * lightDistance),
 			0);
