@@ -26,6 +26,7 @@ import (
 	"encoding/binary"
 	"image/color"
 	"log"
+	"math"
 	"path/filepath"
 	"strings"
 	"time"
@@ -85,6 +86,8 @@ var (
 	fov         f32.Radian
 	fovSpeed    f32.Radian
 	fovMaxSpeed f32.Radian
+	fovMin      f32.Radian
+	fovMax      f32.Radian
 
 	lightPos   *f32.Vec3
 	lightColor color.RGBA
@@ -136,7 +139,14 @@ func computePV(sz size.Event, deltat float32, force bool) {
 	} else if viewAngleSpeed < -viewAngleMaxSpeed {
 		viewAngleSpeed = -viewAngleMaxSpeed
 	}
+	viewAngleOld := viewAngle
 	viewAngle += viewAngleSpeed * f32.Radian(deltat)
+	if math.IsNaN(float64(viewAngle)) {
+		// TODO:
+		// figure out where these NaNs are coming from and stop avoiding them
+		// like a sloppy programmer.
+		viewAngle = viewAngleOld
+	}
 
 	*viewEye = f32.Vec3{5 * f32.Cos(float32(viewAngle)), -5 * f32.Sin(float32(viewAngle)), 3}
 	*viewUp = f32.Vec3{f32.Cos(float32(viewAngle)), -f32.Sin(float32(viewAngle)), 3}
@@ -164,7 +174,15 @@ func computePV(sz size.Event, deltat float32, force bool) {
 	} else if fovSpeed < -fovMaxSpeed {
 		fovSpeed = -fovMaxSpeed
 	}
+	fovOld := fov
 	fov += fovSpeed * f32.Radian(deltat)
+	if math.IsNaN(float64(fov)) {
+		fov = fovOld
+	} else if fov > fovMax {
+		fov = fovMax
+	} else if fov < fovMin {
+		fov = fovMin
+	}
 
 	f32hack.SetPerspective(projection, fov, aspect, 0.1, 100.0)
 	//log.Printf("FOV=%.02f SPEED=%.02f/s", fov, fovSpeed)
@@ -174,7 +192,7 @@ func computePV(sz size.Event, deltat float32, force bool) {
 	} else if fovSpeed < 0 {
 		newFovSpeed = fovSpeed + decel*f32.Radian(deltat)
 	}
-	if fovSpeed*newFovSpeed < 0 {
+	if fovSpeed*newFovSpeed <= 0 {
 		newFovSpeed = 0
 	}
 	//log.Printf("NEW=%.02f/s OLD=%.02f/s", newFovSpeed, fovSpeed)
@@ -242,7 +260,7 @@ func main() {
 				touchTime = now
 				touchX = e.X
 				touchY = e.Y
-				log.Printf("TOUCH=%t X=%.02f Y=%.02f DX=%.02f DY=%.02f VX=%.02f/s VX=%0.02g/s", touchDown, touchX, touchY, deltaX, deltaY, vX, vY)
+				//log.Printf("TOUCH=%t X=%.02f Y=%.02f DX=%.02f DY=%.02f VX=%.02f/s VX=%0.02g/s", touchDown, touchX, touchY, deltaX, deltaY, vX, vY)
 			}
 		}
 	})
@@ -259,8 +277,9 @@ func touchClear() {
 func onStart(glctx gl.Context) {
 	// initialize touchTime just so that it isn't the zero time. it's not a big
 	// deal.
-	touchTime = time.Now()
-	drawTime = time.Now()
+	now := time.Now()
+	touchTime = now
+	drawTime = now
 
 	// Decellerate at 2*PI RAD/S^2 becasue that seems about right..
 	decel = 2 * PI
@@ -270,8 +289,10 @@ func onStart(glctx gl.Context) {
 
 	// fov max speed is pretty arbitrary.. not even sure if it is a linear scale
 	// allow one radian (degree?) of change per second.
-	fov = 45
-	fovMaxSpeed = 1
+	fov = PI / 4.0
+	fovMaxSpeed = 2
+	fovMin = PI / 18.0
+	fovMax = PI * 5 / 6
 
 	lightPos = &f32.Vec3{5, 5, 5}
 	lightColor = color.RGBA{R: 255, G: 255, B: 255}
@@ -330,7 +351,7 @@ func onStart(glctx gl.Context) {
 	// Initialize MVP values for the camera
 	projection = new(f32.Mat4)
 	view = new(f32.Mat4)
-	viewEye = &f32.Vec3{5, 0, 3}
+	viewEye = &f32.Vec3{5, 0, 2}
 	viewCenter = &f32.Vec3{0, 0, 0}
 	viewUp = &f32.Vec3{1, 0, 0}
 	mvpMat = new(f32.Mat4)
@@ -339,6 +360,10 @@ func onStart(glctx gl.Context) {
 
 	modelD6 = new(f32.Mat4)
 	modelD6.Identity()
+	if objectPath == "suzanne.obj" {
+		f32hack.Rotate(modelD6, -PI/2.0, &f32.Vec3{1, 0, 0})
+		f32hack.Rotate(modelD6, PI, &f32.Vec3{0, 1, 0})
+	}
 
 	// Initialize shader parameters
 	glPosition = glctx.GetAttribLocation(program, "vertexPosition")

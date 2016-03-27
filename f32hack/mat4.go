@@ -2,6 +2,34 @@ package f32hack
 
 import "golang.org/x/mobile/exp/f32"
 
+// Rotate sets m to a rotation around axis followed by m.
+func Rotate(m *f32.Mat4, angle f32.Radian, axis *f32.Vec3) {
+	a := *axis
+	a.Normalize()
+
+	c, s := f32.Cos(float32(angle)), f32.Sin(float32(angle))
+	d := 1 - c
+
+	m.Mul(m, &f32.Mat4{{
+		c + d*a[0]*a[0],
+		0 + d*a[0]*a[1] + s*a[2],
+		0 + d*a[0]*a[2] - s*a[1],
+		0,
+	}, {
+		0 + d*a[1]*a[0] - s*a[2],
+		c + d*a[1]*a[1],
+		0 + d*a[1]*a[2] + s*a[0],
+		0,
+	}, {
+		0 + d*a[2]*a[0] + s*a[1],
+		0 + d*a[2]*a[1] - s*a[0],
+		c + d*a[2]*a[2],
+		0,
+	}, {
+		0, 0, 0, 1,
+	}})
+}
+
 // SetPerspective is like f32.Perspective(m, r, aspect, near, far) but the
 // resulting matrix is transposed to be in the proper form.
 func SetPerspective(m *f32.Mat4, r f32.Radian, aspect, near, far float32) {

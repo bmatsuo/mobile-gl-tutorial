@@ -364,7 +364,7 @@ func onStart(glctx gl.Context) {
 	// Initialize MVP values for the camera
 	projection = new(f32.Mat4)
 	view = new(f32.Mat4)
-	viewEye = &f32.Vec3{5, 0, 3}
+	viewEye = &f32.Vec3{5, 0, 2}
 	viewCenter = &f32.Vec3{0, 0, 0}
 	viewUp = &f32.Vec3{1, 0, 0}
 	mvpMat = new(f32.Mat4)
@@ -373,6 +373,10 @@ func onStart(glctx gl.Context) {
 
 	modelD6 = new(f32.Mat4)
 	modelD6.Identity()
+	if objectPath == "suzanne.obj" {
+		f32hack.Rotate(modelD6, -PI/2.0, &f32.Vec3{1, 0, 0})
+		f32hack.Rotate(modelD6, PI, &f32.Vec3{0, 1, 0})
+	}
 
 	// Initialize shader parameters
 	glPosition = glctx.GetAttribLocation(program, "vertexPosition")
