@@ -24,6 +24,7 @@ package main
 
 import (
 	"encoding/binary"
+	"image/color"
 	"log"
 	"math"
 	"path/filepath"
@@ -48,14 +49,17 @@ var (
 	//fps     *debug.FPS
 	program gl.Program
 
-	glPosition gl.Attrib
-	glUV       gl.Attrib
-	glNorm     gl.Attrib
-	glMVP      gl.Uniform
-	glM        gl.Uniform
-	glV        gl.Uniform
-	glTexture  gl.Uniform
-	glLight    gl.Uniform
+	glPosition   gl.Attrib
+	glUV         gl.Attrib
+	glNorm       gl.Attrib
+	glMVP        gl.Uniform
+	glM          gl.Uniform
+	glV          gl.Uniform
+	glTexture    gl.Uniform
+	glLightPos   gl.Uniform
+	glLightPosMP gl.Uniform
+	glLightColor gl.Uniform
+	glLightPower gl.Uniform
 
 	// BUG:
 	// The DDS compressed texture format is never used because I'm not sure how
@@ -83,6 +87,10 @@ var (
 	fovMaxSpeed f32.Radian
 	fovMin      f32.Radian
 	fovMax      f32.Radian
+
+	lightPos   *f32.Vec3
+	lightColor color.RGBA
+	lightPower float32
 
 	mvpMat     *f32.Mat4 // mvpMat is shared because data must be serialized into mvpD6
 	view       *f32.Mat4
@@ -285,6 +293,10 @@ func onStart(glctx gl.Context) {
 	fovMin = PI / 18.0
 	fovMax = PI * 5 / 6
 
+	lightPos = &f32.Vec3{5, 5, 5}
+	lightColor = color.RGBA{R: 255, G: 255, B: 255}
+	lightPower = 50.0
+
 	var err error
 	program, err = glutil.CreateProgram(glctx, vertexShader, fragmentShader)
 	if err != nil {
@@ -368,7 +380,10 @@ func onStart(glctx gl.Context) {
 	glM = glctx.GetUniformLocation(program, "M")
 	glV = glctx.GetUniformLocation(program, "V")
 	glTexture = glctx.GetUniformLocation(program, "myTextureSampler")
-	glLight = glctx.GetUniformLocation(program, "lightPosition")
+	glLightPos = glctx.GetUniformLocation(program, "lightPosition")
+	glLightPosMP = glctx.GetUniformLocation(program, "lightPosition_mp")
+	glLightColor = glctx.GetUniformLocation(program, "lightColor")
+	glLightPower = glctx.GetUniformLocation(program, "lightPower")
 
 	// Initialize the depth buffer to make sure faces rendering correctly according to Z
 	glctx.Enable(gl.DEPTH_TEST)
@@ -427,7 +442,13 @@ func onPaint(glctx gl.Context, sz size.Event) {
 	glctx.UniformMatrix4fv(glMVP, mvpD6[:])
 	glctx.UniformMatrix4fv(glM, mD6[:])
 	glctx.UniformMatrix4fv(glV, _view[:])
-	glctx.Uniform3f(glLight, 5, 5, 5)
+	glctx.Uniform3f(glLightPos, lightPos[0], lightPos[1], lightPos[2])
+	glctx.Uniform3f(glLightPosMP, lightPos[0], lightPos[1], lightPos[2])
+	rlight := float32(lightColor.R) / float32(255)
+	glight := float32(lightColor.G) / float32(255)
+	blight := float32(lightColor.B) / float32(255)
+	glctx.Uniform3f(glLightColor, rlight, glight, blight)
+	glctx.Uniform1f(glLightPower, lightPower)
 
 	// bind die vertex data
 	glctx.BindBuffer(gl.ARRAY_BUFFER, bufD6Vertex)
@@ -510,38 +531,37 @@ varying vec3 eyeDirectionCamera;
 varying vec3 lightDirectionCamera;
 
 uniform sampler2D myTextureSampler;
-uniform vec3 lightPosition;
+uniform vec3 lightPosition_mp;
+uniform vec3 lightColor;
+uniform float lightPower;
 
 void main() {
-	vec3 lightColor = vec3(1, 1, 1);
-	float lightPower = 50.0f;
-
 	vec3 materialDiffuseColor = texture2D(myTextureSampler, UV).rgb;
 	vec3 materialAmbientColor = vec3(0.1, 0.1, 0.1) * materialDiffuseColor;
 	vec3 materialSpecularColor = vec3(0.3, 0.3, 0.3);
 
-	float lightDistance = length(lightPosition - position);
+	float lightDistance = length(lightPosition_mp - position);
 
 	vec3 n = normalize(normalCamera);
 	vec3 l = normalize(lightDirectionCamera);
 	// Cosine of the angle between the normal and the light direction, 
-	// clamped above 0
+	// clamp above 0
 	//  - light is at the vertical of the triangle -> 1
 	//  - light is perpendicular to the triangle -> 0
 	//  - light is behind the triangle -> 0
-	float cosTheta = clamp(dot(n, l), 0, 1);
+	float cosTheta = clamp(dot(n, l), 0.0, 1.0);
 
 	vec3 E = normalize(eyeDirectionCamera);
 	vec3 R = reflect(-l, n);
 	// Cosine of the angle between the Eye vector and the Reflect vector,
-	// clamped to 0
+	// clamp to 0
 	//  - Looking into the reflection -> 1
 	//  - Looking elsewhere -> < 1
-	float cosAlpha = clamp(dot(E, R ), 0, 1);
+	float cosAlpha = clamp(dot(E, R ), 0.0, 1.0);
 
 	gl_FragColor = vec4(
 			materialAmbientColor +
 				materialDiffuseColor * lightColor * lightPower * cosTheta / (lightDistance * lightDistance) + 
-				materialSpecularColor * lightColor * lightPower * pow(cosAlpha, 5) / (lightDistance * lightDistance),
+				materialSpecularColor * lightColor * lightPower * pow(cosAlpha, 5.0) / (lightDistance * lightDistance),
 			0);
 }`
