@@ -1,5 +1,10 @@
 package mobtex
 
+/*
+#include <OpenGL/glext.h>
+*/
+import "C"
+
 import (
 	"bufio"
 	"bytes"
@@ -66,8 +71,17 @@ func LoadDDS(glctx gl.Context, r io.Reader) (gl.Texture, error) {
 	}
 	buf := make([]byte, bufSize)
 	n, err := io.ReadFull(r, buf)
-	if err != nil {
+	if err != nil && err != io.ErrUnexpectedEOF {
 		return zt, fmt.Errorf("failed to read data (%d of %d bytes): %v", n, bufSize, err)
+	}
+	buf = buf[:n]
+	var dummy [1]byte
+	n, err = io.ReadFull(r, dummy[:])
+	if err != io.EOF {
+		if err == nil {
+			return zt, fmt.Errorf("bytes remaining in stream")
+		}
+		return zt, err
 	}
 
 	var format gl.Enum
@@ -75,13 +89,13 @@ func LoadDDS(glctx gl.Context, r io.Reader) (gl.Texture, error) {
 	blockSize := uint32(16)
 	switch fourCC {
 	case "DXT1":
-		format = 0x83F1
+		format = C.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
 		//numComponent = 3
 		blockSize = 8
 	case "DXT3":
-		format = 0x83F2
+		format = C.GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
 	case "DXT5":
-		format = 0x83F3
+		format = C.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
 	default:
 		return zt, fmt.Errorf("invalid dxt identifier")
 	}
@@ -91,30 +105,25 @@ func LoadDDS(glctx gl.Context, r io.Reader) (gl.Texture, error) {
 	glctx.PixelStorei(gl.UNPACK_ALIGNMENT, 1)
 
 	log.Printf(fourCC)
-	offset := uint32(0)
 	for level := 0; level < int(mipMapCount) && (width > 0 || height > 0); level++ {
 		size := ((width + 3) / 4) * ((height + 3) / 4) * blockSize
-		data := buf[offset : offset+size]
+		data := buf[:size]
+		log.Printf("LEVEL=%d WIDTH=%d HEIGHT=%d SIZE=%d", level, width, height, len(data))
 		glctx.CompressedTexImage2D(gl.TEXTURE_2D, level, format, int(width), int(height), 0, data)
 		glerr := glctx.GetError()
 		if glerr == gl.INVALID_ENUM {
 			return zt, fmt.Errorf("invalid internal format: %s (%x)", fourCC, format)
+		} else if glerr != 0 {
+			return zt, fmt.Errorf("internal gl error: %v", glerr)
 		}
-		offset += size
+		buf = buf[size:]
 		width /= 2
 		height /= 2
 	}
 
-	/*
-		var dummy [1]byte
-		n, err = io.ReadFull(r, dummy[:])
-		if err != io.EOF {
-			if err == nil {
-				return zt, fmt.Errorf("bytes remaining in stream")
-			}
-			return zt, err
-		}
-	*/
+	glctx.Enable(gl.TEXTURE_2D)
+	glctx.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	glctx.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
 
 	return texture, nil
 }
