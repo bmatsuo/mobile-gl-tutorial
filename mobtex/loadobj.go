@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"strconv"
 	"unsafe"
 
@@ -39,6 +40,7 @@ func IndexVBO(in *Obj) *VBO {
 		}
 		vbo.Index = append(vbo.Index, uint16(index))
 	}
+	log.Printf("VBO V=%d VT=%d VN=%d INDEX=%d", len(vbo.V), len(vbo.VT), len(vbo.VN), len(vbo.Index))
 	return vbo
 }
 
@@ -176,7 +178,8 @@ func DecodeObj(r io.Reader) (*Obj, error) {
 		obj.VN = append(obj.VN, normTemp[normIndices[i]-1])
 	}
 
-	return obj, err
+	log.Printf("OBJ V=%d VT=%d VN=%d", len(obj.V), len(obj.VT), len(obj.VN))
+	return obj, nil
 }
 
 func parseIndices(b []byte) (int, int, int, error) {
