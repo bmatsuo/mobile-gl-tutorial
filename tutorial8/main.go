@@ -453,7 +453,7 @@ func onPaint(glctx gl.Context, sz size.Event) {
 	glctx.BindTexture(gl.TEXTURE_2D, textureD6)
 	glctx.Uniform1i(glTexture, 0)
 
-	glctx.DrawArrays(gl.TRIANGLES, 0, d6VertexCount)
+	glctx.DrawArrays(gl.TRIANGLES, 0, len(d6VertexData)/2)
 
 	glctx.DisableVertexAttribArray(glPosition)
 	glctx.DisableVertexAttribArray(glUV)
