@@ -70,7 +70,7 @@ func LoadKTX(glctx gl.Context, path string) (gl.Texture, error) {
 		height /= 2
 	}
 
-	glctx.Enable(gl.TEXTURE_2D)
+	//glctx.Enable(gl.TEXTURE_2D)
 
 	//glctx.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
 	//glctx.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
