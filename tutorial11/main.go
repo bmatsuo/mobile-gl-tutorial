@@ -48,6 +48,7 @@ import (
 var (
 	images  *glutil.Images
 	fps     *debug.FPS
+	text    *text2D
 	program gl.Program
 
 	glPosition   gl.Attrib
@@ -101,9 +102,10 @@ var (
 	viewUp     *f32.Vec3
 	projection *f32.Mat4
 
-	drawTime time.Time
-	numDraw  uint64
-	fpsTime  time.Time
+	startTime time.Time
+	drawTime  time.Time
+	numDraw   uint64
+	fpsTime   time.Time
 
 	screen    size.Event
 	touchDown bool
@@ -275,9 +277,12 @@ func touchClear() {
 }
 
 func onStart(glctx gl.Context) {
+	var err error
+
 	// initialize touchTime just so that it isn't the zero time. it's not a big
 	// deal.
 	now := time.Now()
+	startTime = now
 	touchTime = now
 	drawTime = now
 	fpsTime = now
@@ -299,7 +304,6 @@ func onStart(glctx gl.Context) {
 	lightColor = color.RGBA{R: 255, G: 255, B: 255}
 	lightPower = 50.0
 
-	var err error
 	program, err = glutil.CreateProgram(glctx, vertexShader, fragmentShader)
 	if err != nil {
 		log.Printf("error creating GL program: %v", err)
@@ -309,6 +313,12 @@ func onStart(glctx gl.Context) {
 	textureD6, err = mobtex.LoadPath(glctx, texturePath)
 	if err != nil {
 		log.Printf("error loading texture: %v", err)
+		return
+	}
+
+	text, err = newText2D(glctx, "Holstein.ktx")
+	if err != nil {
+		log.Printf("initializing text engine: %v", err)
 		return
 	}
 
@@ -403,11 +413,13 @@ func onStop(glctx gl.Context) {
 	glctx.DeleteProgram(program)
 	glctx.DeleteBuffer(bufD6Vertex)
 	glctx.DeleteBuffer(bufD6UV)
+	text.cleanup()
 	fps.Release()
 	images.Release()
 }
 
 func onPaint(glctx gl.Context, sz size.Event) {
+
 	numDraw++
 
 	now := time.Now()
@@ -485,10 +497,14 @@ func onPaint(glctx gl.Context, sz size.Event) {
 	glctx.DisableVertexAttribArray(glUV)
 	glctx.DisableVertexAttribArray(glNorm)
 
+	msg := ((time.Since(startTime) / time.Millisecond) * time.Millisecond).String()
+	text.write(msg, 10, 500, 60)
+
 	// Disable certain flags before drawing the FPS gauge because they will
 	// cause the gauge to be invisible.
 	glctx.Disable(gl.CULL_FACE)
 	glctx.Disable(gl.DEPTH_TEST)
+
 	fps.Draw(sz)
 }
 
