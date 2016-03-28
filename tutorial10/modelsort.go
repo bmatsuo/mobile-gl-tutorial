@@ -71,6 +71,9 @@ func (d *facesByDepth) Swap(i, j int) {
 
 // Less returns true if face i is farther away than face j.
 // The resulting sort places the furthest faces in the front of the vbo index list
+//
+// BUG:
+// This really doesn't work.
 func (d *facesByDepth) Less(i, j int) bool {
 	if d.cam[i+0] > d.cam[j+0] {
 		return true
